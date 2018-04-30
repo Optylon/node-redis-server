@@ -167,4 +167,13 @@ Emitted when attempting to stop a Redis server.
 
 #### close
 
-Emitted once a Redis server has stopped.
+Emitted once a Redis server has stopped. This only happens when `server.closed` is called,
+not when the `child_process` exits on it's own.
+
+#### exiting
+
+Emmited when a Redis server is exiting or `child_process` exits with an error.
+
+#### exit
+
+Emmited when a Redis server exited (and `server.closed` was called).

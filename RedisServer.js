@@ -243,11 +243,17 @@ class RedisServer extends events.EventEmitter {
 
         /**
          * A listener to close the server when the current process exits.
+         * For the parameter list, please consult:
+         * https://nodejs.org/api/child_process.html#child_process_event_exit
+         * @argument {Number} [exitCode] final process exit code
+         * @argument {String} [signal] The signal by which the redis was terminated
          * @return {undefined}
          */
-        const exitListener = () => {
+        const exitListener = (exitCode, signal) => {
+          server.emit('exiting', { exitCode, signal });
           // istanbul ignore next
           server.close();
+          server.emit('exit', { exitCode, signal });
         };
 
         server.emit('opening');
