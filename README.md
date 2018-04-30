@@ -40,12 +40,13 @@ server.open((err) => {
 
 ### Configuration
 
-| Property | Type   | Default      | Description
-|:---------|:-------|:-------------|:-----------
-| bin      | String | redis-server | A Redis server binary path.
-| conf     | String |              | A Redis server configuration file path.
-| port     | Number | 6379         | A port to bind a Redis server to.
-| slaveof  | String |              | An address of a Redis server to sync with.
+| Property  | Type   | Default      | Description
+|:----------|:-------|:-------------|:-----------
+| bin       | String | redis-server | A Redis server binary path.
+| conf      | String |              | A Redis server configuration file path.
+| port      | Number | 6379         | A port to bind a Redis server to.
+| slaveof   | String |              | An address of a Redis server to sync with.
+| maxclients| Number |              | Maximum number of clients.
 
 A Redis server binary must be available. If you do not have one in $PATH,
 provide a path in configuration.
