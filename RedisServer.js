@@ -236,7 +236,7 @@ class RedisServer extends events.EventEmitter {
           else {
             server.isClosing = true;
 
-            server.emit('closing');
+            server.emit('closing', result.err);
             server.process.once('close', () => reject(result.err));
           }
         };
