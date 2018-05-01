@@ -97,6 +97,10 @@ class RedisServer extends events.EventEmitter {
       target.port = source.port;
     }
 
+    if (source.maxclients != null) {
+      target.maxclients = source.maxclients;
+    }
+
     return target;
   }
 
@@ -119,6 +123,10 @@ class RedisServer extends events.EventEmitter {
 
     if (config.slaveof != null) {
       flags.push(`--slaveof ${config.slaveof}`);
+    }
+
+    if (config.maxclients != null) {
+      flags.push(`--maxclients ${config.maxclients}`);
     }
 
     return flags;
@@ -330,7 +338,8 @@ class RedisServer extends events.EventEmitter {
       bin: 'redis-server',
       conf: null,
       port: 6379,
-      slaveof: null
+      slaveof: null,
+      maxclients: null
     });
 
     /**

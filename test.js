@@ -145,6 +145,7 @@ describe('RedisServer', () => {
   let bin = null;
   const conf = `${new Date().toISOString()}.conf`;
   const port = generateRandomPort();
+  const maxclients = 10;
   const slaveof = `127.0.0.1 ${port}`;
   const bind = '127.0.0.1';
 
@@ -163,7 +164,7 @@ describe('RedisServer', () => {
       done(err);
     });
   });
-  before(() => createConf({ port, bind }, conf));
+  before(() => createConf({ port, bind, maxclients }, conf));
   after((done) => {
     fs.unlink(conf, done);
   });
@@ -327,7 +328,7 @@ describe('RedisServer', () => {
   });
   describe('#open()', () => {
     it('should start a server and execute a callback', () => {
-      const server = new RedisServer(generateRandomPort());
+      const server = new RedisServer({ port: generateRandomPort(), maxclients });
 
       return expectToOpen(server, (err, res) => {
         expect(err).to.equal(null);
@@ -346,7 +347,7 @@ describe('RedisServer', () => {
       });
     });
     it('should start a server and resolve a promise', () => {
-      const server = new RedisServer(generateRandomPort());
+      const server = new RedisServer({ port: generateRandomPort(), maxclients });
 
       return expectToOpen(server).then((res) => {
         expectRunning(server);
@@ -356,7 +357,7 @@ describe('RedisServer', () => {
       });
     });
     it('should do nothing when a server is already starting', () => {
-      const server = new RedisServer(generateRandomPort());
+      const server = new RedisServer({port: generateRandomPort(), maxclients});
       let openingCount = 0;
       let openCount = 0;
 
@@ -380,7 +381,7 @@ describe('RedisServer', () => {
         });
     });
     it('should do nothing when a server is already started', () => {
-      const server = new RedisServer(generateRandomPort());
+      const server = new RedisServer({port: generateRandomPort(), maxclients});
       let openingCount = 0;
       let openCount = 0;
 
@@ -399,14 +400,14 @@ describe('RedisServer', () => {
         });
     });
     it('should fail to start a server with a bad port', () => {
-      const server = new RedisServer({ port: 'fubar' });
+      const server = new RedisServer({ port: 'fubar', maxclients });
 
       return server.open((err) => {
         expect(err).to.be.an('error').to.have.property('code').equal(-3);
       });
     });
     it('should fail to start a server with a privileged port', (done) => {
-      const server = new RedisServer({ port: 1 });
+      const server = new RedisServer({ port: 1, maxclients });
 
       server
         .open((err) => {
@@ -417,8 +418,8 @@ describe('RedisServer', () => {
     });
     it('should fail to start a server on an in-use port', () => {
       const port = generateRandomPort();
-      const server1 = new RedisServer(port);
-      const server2 = new RedisServer(port);
+      const server1 = new RedisServer({port, maxclients});
+      const server2 = new RedisServer({port, maxclients});
 
       return server1
         .open()
@@ -429,8 +430,8 @@ describe('RedisServer', () => {
         }));
     });
     it('should start a server with a given slaveof address', () => {
-      const server1 = new RedisServer(port);
-      const server2 = new RedisServer({ port: generateRandomPort(), slaveof });
+      const server1 = new RedisServer({port, maxclients});
+      const server2 = new RedisServer({ port: generateRandomPort(), slaveof, maxclients });
       const promise = new Promise((resolve, reject) => {
         const timeout = setTimeout(() => reject(new Error('Timeout')), 1000);
         /**
@@ -464,7 +465,7 @@ describe('RedisServer', () => {
     });
     it('should start a server with a given port', () => {
       const expectedPort = generateRandomPort();
-      const server = new RedisServer(expectedPort);
+      const server = new RedisServer({port: expectedPort, maxclients});
       let actualPort = null;
 
       parsePort(server, (port) => actualPort = port);
@@ -499,12 +500,12 @@ describe('RedisServer', () => {
         .then(() => server.close());
     });
     it('should start a server with a given Redis binary', () => {
-      const server = new RedisServer({ bin, port });
+      const server = new RedisServer({ bin, port, maxclients });
 
       return expectToOpen(server).then(() => server.close());
     });
     it('should start a server after #close() finishes', () => {
-      const server = new RedisServer(generateRandomPort());
+      const server = new RedisServer({port: generateRandomPort(), maxclients});
 
       return Promise
         .all([
@@ -521,9 +522,9 @@ describe('RedisServer', () => {
         });
     });
     it('should start a server while others run on different ports', () => {
-      const server1 = new RedisServer(generateRandomPort());
-      const server2 = new RedisServer(generateRandomPort());
-      const server3 = new RedisServer(generateRandomPort());
+      const server1 = new RedisServer({port: generateRandomPort(), maxclients});
+      const server2 = new RedisServer({port: generateRandomPort(), maxclients});
+      const server3 = new RedisServer({port: generateRandomPort(), maxclients});
 
       return Promise
         .all([
@@ -543,7 +544,7 @@ describe('RedisServer', () => {
         ]));
     });
     it('emits "opening" and "open" when starting a server', () => {
-      const server = new RedisServer(generateRandomPort());
+      const server = new RedisServer({port: generateRandomPort(), maxclients});
       let openingCount = 0;
       let openCount = 0;
 
@@ -562,7 +563,7 @@ describe('RedisServer', () => {
         });
     });
     it('emits "closing" and "close" when failing to start a server', () => {
-      const server = new RedisServer('badport');
+      const server = new RedisServer({port: 'badport', maxclients});
       let closingCount = 0;
       let closeCount = 0;
 
@@ -586,19 +587,19 @@ describe('RedisServer', () => {
   });
   describe('#close()', () => {
     it('should close a server and execute a callback', () => {
-      const server = new RedisServer(generateRandomPort());
+      const server = new RedisServer({port: generateRandomPort(), maxclients});
 
       return server
         .open()
         .then(() => promisify((done) => expectToClose(server, done)));
     });
     it('should close a server and resolve a promise', () => {
-      const server = new RedisServer(generateRandomPort());
+      const server = new RedisServer({port: generateRandomPort(), maxclients});
 
       return server.open().then(() => expectToClose(server));
     });
     it('should report any error when applicable', () => {
-      const server = new RedisServer(generateRandomPort());
+      const server = new RedisServer({port: generateRandomPort(), maxclients});
       const close = RedisServer.close;
 
       RedisServer.close = () =>
@@ -616,7 +617,7 @@ describe('RedisServer', () => {
         }));
     });
     it('should do nothing when a server is already stopping', () => {
-      const server = new RedisServer(generateRandomPort());
+      const server = new RedisServer({port: generateRandomPort(), maxclients});
 
       return server.open().then(() => {
         expect(server.close()).to.equal(server.close());
@@ -625,7 +626,7 @@ describe('RedisServer', () => {
       });
     });
     it('should do nothing when a server is already stopped', () => {
-      const server = new RedisServer(generateRandomPort());
+      const server = new RedisServer({port: generateRandomPort(), maxclients});
 
       return server
         .open()
@@ -644,7 +645,7 @@ describe('RedisServer', () => {
       expectIdle(server);
     });
     it('should stop a server after #open() finishes', () => {
-      const server = new RedisServer(generateRandomPort());
+      const server = new RedisServer({port: generateRandomPort(), maxclients});
 
       return Promise
         .all([
@@ -658,7 +659,7 @@ describe('RedisServer', () => {
         });
     });
     it('emits "closing" and "close" when stopping a server', () => {
-      const server = new RedisServer(generateRandomPort());
+      const server = new RedisServer({port: generateRandomPort(), maxclients});
       let closingCount = 0;
       let closeCount = 0;
 
@@ -679,7 +680,7 @@ describe('RedisServer', () => {
   });
   describe('#isOpening', () => {
     it('is `true` while a server is starting', () => {
-      const server = new RedisServer(generateRandomPort());
+      const server = new RedisServer({port: generateRandomPort(), maxclients});
 
       expect(server.isOpening).to.equal(false);
       server.open();
@@ -699,7 +700,7 @@ describe('RedisServer', () => {
         });
     });
     it('is `true` while a misconfigured server is starting', () => {
-      const server = new RedisServer('badport');
+      const server = new RedisServer({port: 'badport', maxclients});
 
       expect(server.isOpening).to.equal(false);
       server.open();
@@ -721,7 +722,7 @@ describe('RedisServer', () => {
   });
   describe('#isClosing', () => {
     it('is `true` while a server is stopping', () => {
-      const server = new RedisServer(generateRandomPort());
+      const server = new RedisServer({port: generateRandomPort(), maxclients});
 
       expect(server.isClosing).to.equal(false);
       server.open();
@@ -741,7 +742,7 @@ describe('RedisServer', () => {
         });
     });
     it('is `true` when a server fails to start', () => {
-      const server = new RedisServer('badport');
+      const server = new RedisServer({port: 'badport', maxclients});
       let isClosing = false;
 
       server.on('closing', () => isClosing = server.isClosing);
@@ -766,7 +767,7 @@ describe('RedisServer', () => {
   });
   describe('#isRunning', () => {
     it('is `true` while a server accepts connections', () => {
-      const server = new RedisServer(generateRandomPort());
+      const server = new RedisServer({port: generateRandomPort(), maxclients});
 
       expect(server.isRunning).to.equal(false);
       server.open();
@@ -786,7 +787,7 @@ describe('RedisServer', () => {
         });
     });
     it('is `false` after a misconfigured server starts', () => {
-      const server = new RedisServer('badport');
+      const server = new RedisServer({port: 'badport', maxclients});
 
       expect(server.isRunning).to.equal(false);
       server.open();
